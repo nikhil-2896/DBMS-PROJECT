@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disaster Management Command Center</title>
+  
+  <!-- CHART.JS LIBRARY -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* --- PREMIUM DARK "GLASS" PALETTE --- */
+    :root {
+      /* Backgrounds */
+      --bg-base: #07090E;        /* Ultra Deep Blue/Black */
+      --bg-card: rgba(18, 24, 38, 0.65); /* Translucent Card */
+      --bg-input: rgba(0, 0, 0, 0.4);    /* Dark Input */
+      
+      /* Gradients & Accents */
+      --gradient-primary: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
+      --gradient-secondary: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+      --accent-cyan: #00F0FF;
+      
+      /* Semantic Colors */
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --success-text: #34D399;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --warning-text: #FBBF24;
+      --info-bg: rgba(59, 130, 246, 0.15);
+      --info-text: #60A5FA;
+      
+      /* Text & Borders */
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(0, 198, 255, 0.4);
+    }
+
+    color-scheme: dark;
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      /* Subtle glowing ambient background orbs */
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(0, 114, 255, 0.08), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.08), transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* --- CUSTOM SCROLLBAR --- */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* --- TOP NAVBAR --- */
+    .navbar {
+      background: rgba(7, 9, 14, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-light);
+      padding: 1.2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+    .navbar h1 { 
+      margin: 0; 
+      font-size: 1.5rem; 
+      letter-spacing: 1px;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 198, 255, 0.2);
+    }
+    .navbar .badge { 
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 5px 14px; 
+      border-radius: 20px; 
+      font-size: 0.75rem; 
+      font-family: monospace;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+    }
+
+    /* --- STRICT GRID LAYOUT --- */
+    .container {
+      max-width: 1440px;
+      margin: 2.5rem auto;
+      padding: 0 2.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 2rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 1150px) {
+      .container { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 800px) {
+      .container { grid-template-columns: 1fr; padding: 0 1.5rem; }
+    }
+
+    /* --- GLASSMORPHISM CARDS --- */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Subtle highlight on top edge of cards */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    }
+
+    .card.wide { grid-column: 1 / -1; }
+
+    .card-header {
+      margin-top: 0;
+      margin-bottom: 1.8rem;
+      color: var(--text-main);
+      font-size: 1.3rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.5px;
+    }
+    
+    .card-header::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 1.4rem;
+      background: var(--accent-cyan);
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 3rem; 
+      align-items: stretch;
+    }
+    @media (max-width: 850px) {
+      .split-layout { grid-template-columns: 1fr; gap: 2rem;} 
+    }
+
+    /* --- FORMS & INPUTS --- */
+    .form-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.6rem;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      background-color: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+      backdrop-filter: blur(4px);
+    }
+    
+    /* Custom Dropdown Arrow styling */
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1em;
+    }
+    .form-group select option { background-color: #0F172A; } /* Fallback for native dropdown list */
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: rgba(0, 198, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.15);
+      background-color: rgba(0,0,0,0.6);
+    }
+
+    /* --- BUTTONS --- */
+    button {
+      width: 100%;
+      padding: 1rem;
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: auto; 
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
+    }
+    button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 114, 255, 0.4);
+      filter: brightness(1.1);
+    }
+    button:active { transform: translateY(0); }
+    
+    button.btn-secondary { 
+      background: var(--gradient-secondary); 
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+    button.btn-secondary:hover { 
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+
+    /* --- LISTS & DATA PRESENTATION --- */
+    .list-container {
+      margin-top: 1.8rem;
+      height: 240px; 
+      overflow-y: auto;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.2);
+      padding: 0.5rem;
+    }
+    
+    .flex-list {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .flex-list .list-container {
+      flex-grow: 1;
+      height: 0; 
+      margin-top: 0;
+    }
+
+    .item {
+      padding: 1rem 1.2rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+    .item:hover { 
+      background: rgba(255,255,255,0.05); 
+      border-color: rgba(255,255,255,0.1);
+      transform: translateX(3px);
+    }
+    
+    .item-details strong { 
+      color: var(--text-main); 
+      font-size: 0.95rem; 
+      display: block; 
+      margin-bottom: 4px; 
+      font-weight: 500;
+    }
+    .item-details small { 
+      color: var(--text-muted); 
+      font-family: 'SFMono-Regular', Consolas, monospace; 
+      font-size: 0.75rem;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .badge-blue { background: var(--info-bg); color: var(--info-text); border: 1px solid rgba(96,165,250,0.2); }
+    .badge-orange { background: var(--warning-bg); color: var(--warning-text); border: 1px solid rgba(251,191,36,0.2); }
+    .badge-green { background: var(--success-bg); color: var(--success-text); border: 1px solid rgba(52,211,153,0.2); }
+
+    /* --- CHART CONTAINER --- */
+    .chart-container {
+      position: relative;
+      flex-grow: 1;
+      min-height: 260px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVIGATION -->
+  <nav class="navbar">
+    <h1>Disaster Management Command Center</h1>
+    <span class="badge">● System Online</span>
+  </nav>
+
+  <!-- MAIN GRID -->
+  <div class="container">
+    
+    <!-- CARD 1: ANALYTICS -->
+    <div class="card">
+      <h2 class="card-header">Impact Analytics</h2>
+      <div class="chart-container">
+        <canvas id="disasterPieChart"></canvas>
+      </div>
+    </div>
+
+    <!-- CARD 2: DISASTER -->
+    <div class="card">
+      <h2 class="card-header">Register Event</h2>
+      <div class="form-wrapper">
+        <div class="form-group">
+          <label for="did">Event ID</label>
+          <input type="number" id="did" placeholder="e.g., 501">
+        </div>
+        <div class="form-group">
+          <label for="dtype">Classification</label>
+          <input type="text" id="dtype" placeholder="e.g., Flood, Seismic">
+        </div>
+        <div class="form-group">
+          <label for="dseverity">Threat Level</label>
+          <select id="dseverity">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+        <button onclick="addDisaster()">Log Event</button>
+      </div>
+      <div id="disasterList" class="list-container"></div>
+    </div>
+
+    <!-- CARD 3: VICTIM -->
+    <div class="card">
+      <h2 class="card-header">Register Victim</h2>
+      <div class="form-wrapper">
+        <div class="form-group">
+          <label for="vid_input">Unique ID</label>
+          <input type="number" id="vid_input" placeholder="e.g., 2001">
+        </div>
+        <div class="form-group">
+          <label for="vname">Full Name</label>
+          <input type="text" id="vname" placeholder="Enter full name">
+        </div>
+        <button onclick="addVictim()" class="btn-secondary">Add Record</button> 
+      </div>
+      <div id="victimList" class="list-container"></div>
+    </div>
+
+    <!-- CARD 4: ASSIGNMENT (WIDE SPAN) -->
+    <div class="card wide">
+      <h2 class="card-header">Resource & Shelter Allocation Protocol</h2>
+      
+      <div class="split-layout">
+        <!-- Left Side: Form -->
+        <div class="form-wrapper">
+          <div class="form-group">
+            <label for="vidSelect">1. Target Victim</label>
+            <select id="vidSelect"><option value="">Loading Data...</option></select>
+          </div>
+          <div class="form-group">
+            <label for="didSelect">2. Assigned Event</label>
+            <select id="didSelect"><option value="">Loading Data...</option></select>
+          </div>
+          <div class="form-group">
+            <label for="sidSelect">3. Destination Facility</label>
+            <select id="sidSelect"><option value="">Loading Data...</option></select>
+          </div>
+          <button onclick="assign()">Execute Allocation</button>
+        </div>
+
+        <!-- Right Side: Live Records -->
+        <div class="flex-list">
+          <label style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 500; margin-bottom: 0.6rem; display: block; letter-spacing: 1px;">Live Dispatch Log</label>
+          <div id="assignList" class="list-container"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const API = "http://localhost:3000";
+    let myPieChart; 
+
+    // Chart.js global dark theme settings
+    Chart.defaults.color = '#94A3B8';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    async function loadChart() {
+      try {
+        const res = await fetch(API + "/analytics/piechart");
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        if (data.length === 0) {
+          document.querySelector('.chart-container').innerHTML = "<p style='color:var(--text-muted); font-size: 0.9rem;'>No data available. Awaiting input.</p>";
+          return;
+        }
+
+        const labels = data.map(row => row.disaster_type);
+        const values = data.map(row => row.total_victims);
+
+        const ctx = document.getElementById('disasterPieChart').getContext('2d');
+        if (myPieChart) myPieChart.destroy(); 
+
+        myPieChart = new Chart(ctx, {
+          type: 'doughnut', 
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              // Cyber/Neon Color Palette
+              backgroundColor: ['#00F0FF', '#8B5CF6', '#FBBF24', '#F43F5E', '#10B981', '#3B82F6'],
+              borderWidth: 0,
+              hoverOffset: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+              legend: { 
+                position: 'bottom', 
+                labels: { boxWidth: 12, padding: 20, color: '#F8FAFC' } 
+              } 
+            },
+            cutout: '75%',
+            layout: { padding: 10 }
+          }
+        });
+      } catch (err) { console.error("Chart error:", err); }
+    }
+
+    async function loadDisasters() {
+      const res = await fetch(API + "/disasters");
+      const data = await res.json();
+      
+      const list = document.getElementById("disasterList");
+      const dropdown = document.getElementById("didSelect");
+      
+      list.innerHTML = "";
+      dropdown.innerHTML = '<option value="">-- Select Event --</option>';
+
+      data.forEach(d => {
+        list.innerHTML += `
+          <div class="item">
+            <div class="item-details">
+              <strong>${d.type}</strong>
+              <small>ID: ${d.disaster_id}</small>
+            </div>
+            <span class="status-badge badge-orange">${d.severity}</span>
+          </div>`;
+        dropdown.innerHTML += `<option value="${d.disaster_id}">${d.type} [ID: ${d.disaster_id}]</option>`;
+      });
+    }
+
+    async function addDisaster() {
+      const disaster = {
+        disaster_id: document.getElementById("did").value,
+        type: document.getElementById("dtype").value,
+        severity: document.getElementById("dseverity").value
+      };
+      if (!disaster.disaster_id || !disaster.type) return alert("Fill required fields");
+
+      await fetch(API + "/disasters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(disaster)
+      });
+      
+      document.getElementById("did").value = "";
+      document.getElementById("dtype").value = "";
+      loadDisasters();
+      loadChart(); 
+    }
+
+    async function loadVictims() {
+      const res = await fetch(API + "/victims");
+      const data = await res.json();
+      
+      const list = document.getElementById("victimList");
+      const dropdown = document.getElementById("vidSelect");
+
+      list.innerHTML = "";
+      dropdown.innerHTML = '<option value="">-- Select Target --</option>';
+
+      data.forEach(v => {
+        list.innerHTML += `
+          <div class="item">
+            <div class="item-details">
+              <strong>${v.name}</strong>
+              <small>ID: ${v.victim_id}</small>
+            </div>
+            <span class="status-badge badge-blue">Registered</span>
+          </div>`;
+        dropdown.innerHTML += `<option value="${v.victim_id}">${v.name}</option>`;
+      });
+    }
+
+    async function addVictim() {
+      const victim = {
+        victim_id: document.getElementById("vid_input").value,
+        name: document.getElementById("vname").value
+      };
+      if (!victim.name || !victim.victim_id) return alert("Fill all fields");
+
+      await fetch(API + "/victim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(victim)
+      });
+      
+      document.getElementById("vid_input").value = "";
+      document.getElementById("vname").value = "";
+      loadVictims();
+    }
+
+    async function loadShelters() {
+      const res = await fetch(API + "/shelters");
+      const data = await res.json();
+      
+      const dropdown = document.getElementById("sidSelect");
+      dropdown.innerHTML = '<option value="">-- Select Facility --</option>';
+
+      data.forEach(s => {
+        dropdown.innerHTML += `<option value="${s.shelter_id}">${s.name} [Space: ${s.capacity - s.occupancy}]</option>`;
+      });
+    }
+
+    async function loadAssignments() {
+      const res = await fetch(API + "/assignments");
+      const data = await res.json();
+      
+      const list = document.getElementById("assignList");
+      list.innerHTML = "";
+
+      data.forEach(a => {
+        list.innerHTML += `
+          <div class="item">
+            <div class="item-details">
+              <strong>${a.victim_name} ➔ ${a.shelter_name}</strong>
+              <small>Cause: ${a.disaster_type}</small> 
+            </div>
+            <span class="status-badge badge-green">${a.status}</span>
+          </div>`;
+      });
+    }
+
+    async function assign() {
+      const data = {
+        victim_id: document.getElementById("vidSelect").value,
+        disaster_id: document.getElementById("didSelect").value,
+        shelter_id: document.getElementById("sidSelect").value
+      };
+
+      if (!data.victim_id || !data.disaster_id || !data.shelter_id) {
+        alert("Selection error: All fields are required for dispatch.");
+        return;
+      }
+
+      const response = await fetch(API + "/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        alert("Database Error: " + result.error);
+      } else {
+        document.getElementById("vidSelect").value = "";
+        document.getElementById("didSelect").value = "";
+        document.getElementById("sidSelect").value = "";
+        
+        loadAssignments();
+        loadShelters(); 
+        loadChart(); 
+      }
+    }
+
+    // Initialize all data
+    loadChart();
+    loadDisasters();
+    loadVictims();
+    loadShelters();
+    loadAssignments();
+  </script>
+</body>
+</html>
