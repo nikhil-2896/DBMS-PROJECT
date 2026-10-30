@@ -46,11 +46,12 @@ CREATE TABLE shelter (
 );
 
 CREATE TABLE victim_assistance (
-    assistance_id INT PRIMARY KEY,
+    assistance_id INT AUTO_INCREMENT PRIMARY KEY,
     victim_id INT NOT NULL,
     disaster_id INT NOT NULL,
     shelter_id INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Assigned',
+    CONSTRAINT unique_victim_disaster UNIQUE (victim_id, disaster_id),
     FOREIGN KEY (victim_id) REFERENCES victim(victim_id) ON DELETE CASCADE,
     FOREIGN KEY (disaster_id) REFERENCES disaster(disaster_id) ON DELETE CASCADE,
     FOREIGN KEY (shelter_id) REFERENCES shelter(shelter_id) ON DELETE CASCADE
@@ -64,7 +65,7 @@ CREATE TABLE resource (
 );
 
 CREATE TABLE resource_alloc (
-    alloc_id INT PRIMARY KEY,
+    alloc_id INT AUTO_INCREMENT PRIMARY KEY,
     disaster_id INT,
     resource_id INT,
     qty INT NOT NULL DEFAULT 0,
@@ -155,12 +156,13 @@ CREATE TRIGGER trg_check_shelter_capacity
 BEFORE INSERT ON victim_assistance
 FOR EACH ROW
 BEGIN
-    DECLARE cur_cap INT;
-    DECLARE cur_occ INT;
+    DECLARE cur_cap INT DEFAULT NULL;
+    DECLARE cur_occ INT DEFAULT NULL;
 
     SELECT capacity, occupancy INTO cur_cap, cur_occ
     FROM shelter
-    WHERE shelter_id = NEW.shelter_id;
+    WHERE shelter_id = NEW.shelter_id
+    FOR UPDATE;
 
     IF cur_cap IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid shelter_id';

@@ -17,6 +17,8 @@
   --warning-text: #FBBF24;
   --info-bg: rgba(59, 130, 246, 0.15);
   --info-text: #60A5FA;
+  --danger-bg: rgba(244, 63, 94, 0.15);
+  --danger-text: #FB7185;
   
   /* Text & Borders */
   --text-main: #F8FAFC;
@@ -193,6 +195,8 @@ body {
 
 .form-group select option { background-color: #0F172A; }
 
+.form-group select option:disabled { color: #64748B; }
+
 .form-group input:focus, .form-group select:focus {
   outline: none;
   border-color: rgba(0, 198, 255, 0.6);
@@ -303,6 +307,94 @@ button.btn-secondary:hover {
 .badge-blue { background: var(--info-bg); color: var(--info-text); border: 1px solid rgba(96,165,250,0.2); }
 .badge-orange { background: var(--warning-bg); color: var(--warning-text); border: 1px solid rgba(251,191,36,0.2); }
 .badge-green { background: var(--success-bg); color: var(--success-text); border: 1px solid rgba(52,211,153,0.2); }
+.badge-red { background: var(--danger-bg); color: var(--danger-text); border: 1px solid rgba(251,113,133,0.2); }
+
+/* --- SHELTER DASHBOARD --- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-tile {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.stat-value {
+  color: var(--text-main);
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.shelter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.shelter-tile {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.shelter-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.shelter-tile-top strong {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.shelter-tile-bottom {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.fill-ok { background: #10B981; }
+.fill-warn { background: #FBBF24; }
+.fill-full { background: #F43F5E; }
 
 /* --- CHART & UTILITIES --- */
 .chart-container {
@@ -326,4 +418,5 @@ button.btn-secondary:hover {
 
 @media (max-width: 800px) {
   .container { grid-template-columns: 1fr; padding: 0 1.5rem; }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
 }

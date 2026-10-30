@@ -1,36 +1,46 @@
-const API_BASE = "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+async function request(path, options) {
+  const res = await fetch(`${API_BASE}${path}`, options);
+
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    // response had no JSON body
+  }
+
+  if (!res.ok) {
+    throw new Error((body && body.error) || `Request failed (${res.status})`);
+  }
+  return body;
+}
+
+const send = (method, path, data) =>
+  request(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
 
 export const api = {
-  getAnalytics: () => fetch(`${API_BASE}/analytics/piechart`).then(r => r.json()),
-  getDisasters: () => fetch(`${API_BASE}/disasters`).then(r => r.json()),
-  createDisaster: (data) => fetch(`${API_BASE}/disasters`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  }).then(async r => {
-    const res = await r.json();
-    if (!r.ok) throw new Error(res.error || "Failed to add disaster");
-    return res;
-  }),
-  getVictims: () => fetch(`${API_BASE}/victims`).then(r => r.json()),
-  createVictim: (data) => fetch(`${API_BASE}/victims`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  }).then(async r => {
-    const res = await r.json();
-    if (!r.ok) throw new Error(res.error || "Failed to add victim");
-    return res;
-  }),
-  getShelters: () => fetch(`${API_BASE}/shelters`).then(r => r.json()),
-  getAssignments: () => fetch(`${API_BASE}/assignments`).then(r => r.json()),
-  assignVictim: (data) => fetch(`${API_BASE}/assign`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  }).then(async r => {
-    const res = await r.json();
-    if (!r.ok) throw new Error(res.error || "Failed to assign");
-    return res;
-  })
+  getAnalytics: () => request('/analytics/piechart'),
+  getResourceCosts: () => request('/analytics/costs'),
+  getDisasters: () => request('/disasters'),
+  createDisaster: (data) => send('POST', '/disasters', data),
+  getVictims: () => request('/victims'),
+  createVictim: (data) => send('POST', '/victims', data),
+  getShelters: () => request('/shelters'),
+  getShelterSuggestion: (disasterId) =>
+    request(`/shelters/suggestion?disaster_id=${encodeURIComponent(disasterId)}`),
+  getAssignments: () => request('/assignments'),
+  assignVictim: (data) => send('POST', '/assign', data),
+  updateAssignmentStatus: (id, status) => send('PATCH', `/assignments/${id}`, { status }),
+  deleteAssignment: (id) => request(`/assignments/${id}`, { method: 'DELETE' }),
+  getResources: () => request('/resources'),
+  getResourceAllocations: () => request('/resource-allocations'),
+  createResourceAllocation: (data) => send('POST', '/resource-allocations', data),
+  updateResourceAllocationStatus: (id, status) =>
+    send('PATCH', `/resource-allocations/${id}`, { status }),
+  getResponders: () => request('/responders')
 };
